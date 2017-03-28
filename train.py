@@ -13,7 +13,7 @@ import pickle
 # Data loading parameters
 tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data used for validation (default: 10%)")
 
-tf.flags.DEFINE_string("data_file_path", "data/corpus.small", "Path to the training data")
+tf.flags.DEFINE_string("data_file_path", "data/corpus.128", "Path to the training data")
 # Model parameters
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of word embeddings (default: 128)")
 tf.flags.DEFINE_integer("vocab_size", 50000, "Size of the vocabulary (default: 50k)")
@@ -79,10 +79,10 @@ with tf.Graph().as_default():
 
         # Initialize model
         pos_tagger = PoSTagger(
-            num_classes=num_outputTags, 
+            n_pos_tags=num_outputTags, 
             vocab_size=FLAGS.vocab_size, 
             embedding_size=FLAGS.embedding_dim, 
-            past_words=FLAGS.past_words
+            n_past_words=FLAGS.past_words
         )
 
         # Define training procedure
