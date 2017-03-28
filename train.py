@@ -6,13 +6,14 @@ import numpy as np
 import os
 import time
 import datetime
+import pickle
 
 ## PARAMETERS ##
 
 # Data loading parameters
 tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data used for validation (default: 10%)")
 
-tf.flags.DEFINE_string("data_file_path", "/data/corpus-00", "Path to the training data")
+tf.flags.DEFINE_string("data_file_path", "data/corpus.small", "Path to the training data")
 # Model parameters
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of word embeddings (default: 128)")
 tf.flags.DEFINE_integer("vocab_size", 50000, "Size of the vocabulary (default: 50k)")
@@ -36,9 +37,15 @@ print("")
 
 ## DATA PREPARATION ##
 
-# Load data
 print("Loading and preprocessing traning and dev datasets \n")
-x, y, num_outputTags = data_utils.load_data_and_labels(FLAGS.data_file_path, FLAGS.vocab_size, FLAGS.past_words)
+if os.path.isfile('cache.pkl'):
+    with open('cache.pkl', 'rb') as f:
+        x, y, num_outputTags = pickle.load(f)
+else:
+    # Load data
+    x, y, num_outputTags = data_utils.load_data_and_labels(FLAGS.data_file_path, FLAGS.vocab_size, FLAGS.past_words)
+    with open('cache.pkl', 'wb') as f:
+        pickle.dump((x, y, num_outputTags), f)
 
 # Randomly shuffle data
 np.random.seed(10)
@@ -58,10 +65,18 @@ print("Done \n")
 
 with tf.Graph().as_default():
     session_conf = tf.ConfigProto(
+        # allow_soft_placement: allow TensorFlow to deploy itself on whatever it
+        # thinks is sensible, if the requested device isn't available
+        # (pos_tagger.py requests GPU)
         allow_soft_placement=FLAGS.allow_soft_placement,
+        # log_device_placement: make a note in the log of which device
+        # TensorFlow depoloyed itself on (which CPU/GPU)
         log_device_placement=FLAGS.log_device_placement)
     sess = tf.Session(config=session_conf)
     with sess.as_default():
+        # num_outputTags: the number of unique POS tags seen in the
+        # training data
+
         # Initialize model
         pos_tagger = PoSTagger(
             num_classes=num_outputTags, 
@@ -71,11 +86,13 @@ with tf.Graph().as_default():
         )
 
         # Define training procedure
+
+        # first argument: the value of the variable
         global_step = tf.Variable(0, name="global_step", trainable=False)
-        # TODO: Define an optimizer, e.g. AdamOptimizer
-        optimizer = ...
-        # TODO: Define an optimizer step
-        train_op = ...
+        # Define an optimizer, e.g. AdamOptimizer
+        optimizer = tf.train.AdamOptimizer()
+        # Define an optimizer step
+        train_op = optimizer.minimize(pos_tagger.loss)
 
         # Output directory for models and summaries
         timestamp = str(int(time.time()))
