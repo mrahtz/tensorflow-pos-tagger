@@ -9,6 +9,12 @@ def clean_string(string):
 def load_data_and_labels(data_file_path, max_vocabSize, past_words):
     """
     Loads training data, creates vocabulary and returns the respective ids for words and tags
+    
+    Returns:
+    - x: a list of lists - one list for each word
+         each list contains the ID of the word in the vocabulary,
+         along with the IDs of the previous words
+    - y: the POS tag for each of the words
     """
     # Load data from file
     cwd = os.getcwd()
@@ -31,7 +37,9 @@ def load_data_and_labels(data_file_path, max_vocabSize, past_words):
     # Prune vocabulary to max_vocabSize
     words_toKeep = [tupl[0] for tupl in word_counts.most_common(max_vocabSize-1)]
     # Create mapping from words/PoS tags to ids
+    # (IDs start from 1)
     word_toId = {word: i for i, word in enumerate(words_toKeep, 1)}
+    # ID 0: UNK
     word_toId["<UNK>"] = 0 # add unknown token to vocabulary (all words not contained in it will be mapped to this)
     pos_toId = {pos: i for i, pos in enumerate(list(unique_posTags))}
     # Save vocabulary and PoS tags ids for evaluation
@@ -41,7 +49,8 @@ def load_data_and_labels(data_file_path, max_vocabSize, past_words):
         pickle.dump(word_toId, f)
     with open(cwd+"/vocab/posIds.pkl", "wb") as f:
         pickle.dump(pos_toId, f)
-    # Replace each word with the id of the previous "past_words" words
+    # Replace each word with the IDs of the previous "past_words" words
+    # (past_words: int)
     # and replace each PoS tag by its respective id
     x = []
     y = []
