@@ -90,14 +90,20 @@ class PoSTagger(object):
     
                 # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
                 # result is a 1D tensor of length batch_size
-                self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                    _sentinel=None,
-                    labels=self.input_y,
-                    logits=self.logits)
+                # NB sparse_softmax: allows us to specify correct class
+                # as an index
+                self.loss = tf.reduce_mean(
+                        tf.nn.sparse_softmax_cross_entropy_with_logits(
+                            labels=self.input_y,
+                            logits=self.logits
+                ))
 
             # Calculate accuracy
             with tf.name_scope("accuracy"):
                 # compute the average accuracy over the batch (remember tf.argmax and tf.equal)
-                # TODO what is this for?
-                #self.predictions = 
-                self.accuracy = tf.reduce_mean(self.loss)
+
+                # logits has shape [?, 42]
+                self.predictions = tf.argmax(self.logits, axis=1)
+                correct_prediction = tf.equal(self.predictions, self.input_y)
+                self.accuracy = tf.reduce_mean(tf.cast(correct_prediction,
+                    tf.float32))
