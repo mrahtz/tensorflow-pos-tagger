@@ -46,7 +46,7 @@ class PoSTagger(object):
                 new_shape = [-1, (n_past_words + 1) * embedding_size]
                 self.feature_vector = tf.reshape(self.word_matrix, new_shape)
 
-                # send feature vector through hidden layer
+                # send feature vector through hidden layers
 
                 feature_vector_size = (n_past_words + 1) * embedding_size
                 h1_size = 100
@@ -56,13 +56,10 @@ class PoSTagger(object):
                         stddev=0.1
                     )
                 )
-                print("w1 has shape", w1.get_shape())
-
-                self.h = tf.nn.relu(
+                self.h1 = tf.nn.relu(
                     tf.matmul(self.feature_vector, w1)
                 )
-                print("h has shape", self.h.get_shape())
-                print(self.h.shape)
+                print(self.h1.shape)
 
                 h2_size = 100
                 self.w2 = tf.Variable(
@@ -72,20 +69,18 @@ class PoSTagger(object):
                     )
                 )
                 self.h2 = tf.nn.relu(
-                    tf.matmul(self.feature_vector, h1)
+                    tf.matmul(self.h1, self.w2)
                 )
 
                 # Compute softmax logits 
 
-                self.w2 = tf.Variable(
+                self.wl = tf.Variable(
                     tf.truncated_normal(
                         [h2_size, n_pos_tags],
                         stddev=0.1
                     )
                 )
-                print("w2 has shape", self.w2.get_shape())
-                self.logits = tf.matmul(self.h, self.w2)
-                print("logits has shape", self.logits.get_shape())
+                self.logits = tf.matmul(self.h2, self.wl)
     
                 # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
 
