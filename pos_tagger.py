@@ -56,9 +56,9 @@ class PoSTagger(object):
 
                 # Compute softmax logits 
 
-                w2 = tf.Variable(tf.zeros([hidden_layer_size, n_pos_tags]))
-                print("w2 has shape", w2.get_shape())
-                self.logits = tf.matmul(hidden_layer, w2)
+                self.w2 = tf.Variable(tf.zeros([hidden_layer_size, n_pos_tags]))
+                print("w2 has shape", self.w2.get_shape())
+                self.logits = tf.matmul(hidden_layer, self.w2)
                 print("logits has shape", self.logits.get_shape())
     
                 # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
