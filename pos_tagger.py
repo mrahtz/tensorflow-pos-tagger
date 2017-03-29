@@ -49,7 +49,7 @@ class PoSTagger(object):
                 )
                 print("w1 has shape", w1.get_shape())
 
-                hidden_layer =tf.nn.relu(
+                hidden_layer = tf.nn.relu(
                     tf.matmul(feature_vector, w1)
                 )
                 print("hidden_layer has shape", hidden_layer.get_shape())
