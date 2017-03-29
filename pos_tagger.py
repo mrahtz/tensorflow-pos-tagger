@@ -25,40 +25,40 @@ class PoSTagger(object):
             with tf.name_scope("embedding"):
                 # Create an embedding matrix
                 self.embedding_matrix = \
-                    tf.Variable(tf.zeros([vocab_size, embedding_size]))
+                    tf.Variable(tf.random_uniform([vocab_size, embedding_size]))
  
             # Fully connected layer with ReLU 
             with tf.name_scope("model"):
 
                 # Create feature vector
 
-                word_matrix = \
+                self.word_matrix = \
                     tf.nn.embedding_lookup(self.embedding_matrix, self.input_x)
                 # stack the rows
                 # -1: account for variable batch size
                 # TODO: understand
                 new_shape = [-1, (n_past_words + 1) * embedding_size]
-                feature_vector = tf.reshape(word_matrix, new_shape)
+                self.feature_vector = tf.reshape(self.word_matrix, new_shape)
 
                 # send feature vector through hidden layer
 
                 feature_vector_size = (n_past_words + 1) * embedding_size
                 hidden_layer_size = 100
                 w1 = tf.Variable(
-                    tf.zeros([feature_vector_size, hidden_layer_size])
+                    tf.random_uniform([feature_vector_size, hidden_layer_size])
                 )
                 print("w1 has shape", w1.get_shape())
 
-                hidden_layer = tf.nn.relu(
-                    tf.matmul(feature_vector, w1)
+                self.hidden_layer = tf.nn.relu(
+                    tf.matmul(self.feature_vector, w1)
                 )
-                print("hidden_layer has shape", hidden_layer.get_shape())
+                print("hidden_layer has shape", self.hidden_layer.get_shape())
 
                 # Compute softmax logits 
 
                 self.w2 = tf.Variable(tf.zeros([hidden_layer_size, n_pos_tags]))
                 print("w2 has shape", self.w2.get_shape())
-                self.logits = tf.matmul(hidden_layer, self.w2)
+                self.logits = tf.matmul(self.hidden_layer, self.w2)
                 print("logits has shape", self.logits.get_shape())
     
                 # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
