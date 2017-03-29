@@ -16,8 +16,8 @@ tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training d
 
 tf.flags.DEFINE_string("data_file_path", "data/corpus.small", "Path to the training data")
 # Model parameters
-tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of word embeddings (default: 128)")
-tf.flags.DEFINE_integer("vocab_size", 50000, "Size of the vocabulary (default: 50k)")
+tf.flags.DEFINE_integer("embedding_dim", 50, "Dimensionality of word embeddings (default: 128)")
+tf.flags.DEFINE_integer("vocab_size", 20000, "Size of the vocabulary (default: 50k)")
 tf.flags.DEFINE_integer("past_words", 3, "How many previous words are used for prediction (default: 3)")
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
