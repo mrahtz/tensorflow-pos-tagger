@@ -17,8 +17,6 @@ class PoSTagger(object):
         # The target pos-tags
         self.input_y = tf.placeholder(tf.int64, [None], name="input_y") 
 
-        print("input_x has shape", self.input_x.get_shape())
-            
         with tf.device('/gpu:0'):
             
             # Embedding layer
@@ -59,7 +57,6 @@ class PoSTagger(object):
                 self.h1 = tf.nn.relu(
                     tf.matmul(self.feature_vector, w1)
                 )
-                print(self.h1.shape)
 
                 """
                 h2_size = 100
