@@ -7,6 +7,7 @@ import os
 import time
 import datetime
 import pickle
+import numpy as np
 
 ## PARAMETERS ##
 
@@ -138,6 +139,7 @@ with tf.Graph().as_default():
                 feed_dict)
             time_str = datetime.datetime.now().isoformat()
             print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+            print(np.sum(sess.run(pos_tagger.embedding_matrix)))
             train_summary_writer.add_summary(summaries, step)
 
         def dev_step(x_batch, y_batch, writer=None):

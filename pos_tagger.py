@@ -39,17 +39,17 @@ class PoSTagger(object):
                 one_hot = tf.one_hot(indices=self.input_x, depth=vocab_size)
                 """
 
-                embedding_matrix = \
+                self.embedding_matrix = \
                     tf.Variable(tf.zeros([vocab_size, embedding_size]))
                 print("embedding_matrix has shape",
-                        embedding_matrix.get_shape())
+                        self.embedding_matrix.get_shape())
 
                 """
                 # so this guy will be (n_past_words + 1) x embedding size
                 word_matrix = one_hot * embedding_matrix
                 """
                 word_matrix = \
-                    tf.nn.embedding_lookup(embedding_matrix, self.input_x)
+                    tf.nn.embedding_lookup(self.embedding_matrix, self.input_x)
                 print("word_matrix has shape", word_matrix.get_shape())
 
                 # now we just need to stack the rows of this guy
