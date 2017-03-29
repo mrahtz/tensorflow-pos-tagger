@@ -121,8 +121,6 @@ with tf.Graph().as_default():
             os.makedirs(checkpoint_dir)
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
         
-        w2_grad = tf.gradients(pos_tagger.loss, [pos_tagger.w2])
-
         # Initialize all variables
         sess.run(tf.global_variables_initializer())
         sess.graph.finalize()
@@ -141,8 +139,6 @@ with tf.Graph().as_default():
                 feed_dict)
             time_str = datetime.datetime.now().isoformat()
             print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-            print('embedding matrix sum: ', np.sum(sess.run(pos_tagger.embedding_matrix)))
-            print('w2_grad sum:', np.sum(sess.run(w2_grad, feed_dict)))
             train_summary_writer.add_summary(summaries, step)
 
 
