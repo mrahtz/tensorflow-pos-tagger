@@ -9,6 +9,7 @@ class PoSTagger(object):
     def __init__(self, n_pos_tags, vocab_size, embedding_size, n_past_words): # sequence_length, filter_sizes, num_filters, l2_reg_lambda=0.0
 
         print("Initialising PoSTagger...")
+        print("n_pos_tags: ", n_pos_tags)
 
         # Minibatch placeholders for input and output
         # The word indices of the window
@@ -75,16 +76,16 @@ class PoSTagger(object):
                         )
                 print("weight_matrix has shape", weight_matrix.get_shape())
 
-                mult = feature_vector * weight_matrix
+                mult = tf.matmul(feature_vector, weight_matrix)
                 print("mult has shape", mult.get_shape())
 
                 hidden_layer = tf.nn.relu(mult)
                 print("hidden_layer has shape", hidden_layer.get_shape())
 
                 # Compute softmax logits 
-                w_m_2 = tf.Variable(tf.zeros([n_pos_tags, hidden_layer_size]))
+                w_m_2 = tf.Variable(tf.zeros([hidden_layer_size, n_pos_tags]))
                 print("w_m_2 has shape", w_m_2.get_shape())
-                self.logits = w_m_2 * hidden_layer
+                self.logits = tf.matmul(hidden_layer, w_m_2)
                 print("logits has shape", self.logits.get_shape())
     
                 # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
