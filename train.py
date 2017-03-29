@@ -14,7 +14,7 @@ import numpy as np
 # Data loading parameters
 tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data used for validation (default: 10%)")
 
-tf.flags.DEFINE_string("data_file_path", "data/corpus.128", "Path to the training data")
+tf.flags.DEFINE_string("data_file_path", "data/corpus.small", "Path to the training data")
 # Model parameters
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of word embeddings (default: 128)")
 tf.flags.DEFINE_integer("vocab_size", 50000, "Size of the vocabulary (default: 50k)")
