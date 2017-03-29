@@ -36,17 +36,21 @@ class PoSTagger(object):
 
                 # Create feature vector
 
-                self.word_matrix = \
-                    tf.nn.embedding_lookup(self.embedding_matrix, self.input_x)
+                self.input_x_past_words = self.input_x[:, 1:]
+
+                self.word_matrix = tf.nn.embedding_lookup(
+                    self.embedding_matrix,
+                    self.input_x_past_words
+                )
                 # stack the rows
                 # -1: account for variable batch size
                 # TODO: understand
-                new_shape = [-1, (n_past_words + 1) * embedding_size]
+                new_shape = [-1, (n_past_words) * embedding_size]
                 self.feature_vector = tf.reshape(self.word_matrix, new_shape)
 
                 # send feature vector through hidden layers
 
-                feature_vector_size = (n_past_words + 1) * embedding_size
+                feature_vector_size = (n_past_words) * embedding_size
                 h1_size = 100
                 w1 = tf.Variable(
                     tf.truncated_normal(

@@ -14,6 +14,9 @@ def load_data_and_labels(data_file_path, max_vocabSize, past_words):
     - x: a list of lists - one list for each word
          each list contains the ID of the word in the vocabulary,
          along with the IDs of the previous words
+         (the first index is the current word;
+         the next is the previous word;
+         and so on)
     - y: the POS tag for each of the words
     """
     # Load data from file
