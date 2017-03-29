@@ -24,8 +24,14 @@ class PoSTagger(object):
             # Embedding layer
             with tf.name_scope("embedding"):
                 # Create an embedding matrix
-                self.embedding_matrix = \
-                    tf.Variable(tf.random_uniform([vocab_size, embedding_size]))
+                # Initialise following recommendations from
+                # https://www.tensorflow.org/get_started/mnist/pros
+                self.embedding_matrix = tf.Variable(
+                    tf.truncated_normal(
+                        [vocab_size, embedding_size],
+                        stddev=0.1
+                    )
+                )
  
             # Fully connected layer with ReLU 
             with tf.name_scope("model"):
@@ -45,7 +51,10 @@ class PoSTagger(object):
                 feature_vector_size = (n_past_words + 1) * embedding_size
                 hidden_layer_size = 100
                 w1 = tf.Variable(
-                    tf.random_uniform([feature_vector_size, hidden_layer_size])
+                    tf.truncated_normal(
+                        [feature_vector_size, hidden_layer_size],
+                        stddev=0.1
+                    )
                 )
                 print("w1 has shape", w1.get_shape())
 
