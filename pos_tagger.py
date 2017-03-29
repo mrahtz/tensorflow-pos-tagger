@@ -61,6 +61,7 @@ class PoSTagger(object):
                 )
                 print(self.h1.shape)
 
+                """
                 h2_size = 100
                 self.w2 = tf.Variable(
                     tf.truncated_normal(
@@ -71,16 +72,17 @@ class PoSTagger(object):
                 self.h2 = tf.nn.relu(
                     tf.matmul(self.h1, self.w2)
                 )
+                """
 
                 # Compute softmax logits 
 
                 self.wl = tf.Variable(
                     tf.truncated_normal(
-                        [h2_size, n_pos_tags],
+                        [h1_size, n_pos_tags],
                         stddev=0.1
                     )
                 )
-                self.logits = tf.matmul(self.h2, self.wl)
+                self.logits = tf.matmul(self.h1, self.wl)
     
                 # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
 
