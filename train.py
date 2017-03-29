@@ -93,7 +93,7 @@ with tf.Graph().as_default():
         # Define an optimizer, e.g. AdamOptimizer
         optimizer = tf.train.AdamOptimizer()
         # Define an optimizer step
-        train_op = optimizer.minimize(pos_tagger.loss)
+        train_op = optimizer.minimize(pos_tagger.loss, global_step=global_step)
 
         # Output directory for models and summaries
         timestamp = str(int(time.time()))
