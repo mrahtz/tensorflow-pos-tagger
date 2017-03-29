@@ -77,7 +77,12 @@ class PoSTagger(object):
 
                 # Compute softmax logits 
 
-                self.w2 = tf.Variable(tf.zeros([h2_size, n_pos_tags]))
+                self.w2 = tf.Variable(
+                    tf.truncated_normal(
+                        [h2_size, n_pos_tags],
+                        stddev=0.1
+                    )
+                )
                 print("w2 has shape", self.w2.get_shape())
                 self.logits = tf.matmul(self.h, self.w2)
                 print("logits has shape", self.logits.get_shape())
