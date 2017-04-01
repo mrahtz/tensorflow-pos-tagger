@@ -57,10 +57,7 @@ def load_data_and_labels(data_file_path, max_vocabSize, past_words):
     with open(data_file_path, "r") as tagged_sentences:
         for sentence in tagged_sentences:
             pairs = sentence.strip().split(" ")
-            words_and_tags = list(pair.split("/") for pair in pairs if len(pair.split("/")) == 2)
-            if len(words_and_tags) == 0:
-                continue
-            words, pos_tags = zip(*words_and_tags)
+            words, pos_tags = zip(*(pair.split("/") for pair in pairs if len(pair.split("/")) == 2))
             words = [clean_string(word) for word in words]
             for j in range(len(words)):
                 y.append(pos_toId[ pos_tags[j] ])
