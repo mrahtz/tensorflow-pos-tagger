@@ -6,6 +6,31 @@ import pickle
 def clean_string(string):
     return string.lower()
 
+def words_tags_to_ids(data_file, word_toId, pos_toId, n_past_words):
+    # Replace each word with the IDs of the previous "past_words" words
+    # (past_words: int)
+    # and replace each PoS tag by its respective id
+    x = []
+    y = []
+    for sentence in data_file:
+        pairs = sentence.strip().split(" ")
+        words, pos_tags = zip(*(pair.split("/") for pair in pairs if len(pair.split("/")) == 2))
+        words = [clean_string(word) for word in words]
+        for j in range(len(words)):
+            y.append(pos_toId[ pos_tags[j] ])
+            pastWords_ids = []
+            for k in range(0, n_past_words+1): # for previous words
+                if j-k < 0: # out of bounds
+                    pastWords_ids.append(0) # <UNK>
+                elif words[j-k] in word_toId: # word in vocabulary
+                    pastWords_ids.append(word_toId[ words[j-k] ])
+                else: # word not in vocabulary
+                    pastWords_ids.append(0) # <UNK>    
+            x.append(pastWords_ids)
+
+    return np.array(x), np.array(y) 
+
+
 def load_data_and_labels(data_file_path, max_vocabSize, past_words):
     """
     Loads training data, creates vocabulary and returns the respective ids for words and tags
@@ -49,29 +74,11 @@ def load_data_and_labels(data_file_path, max_vocabSize, past_words):
         pickle.dump(word_toId, f)
     with open(cwd+"/vocab/posIds.pkl", "wb") as f:
         pickle.dump(pos_toId, f)
-    # Replace each word with the IDs of the previous "past_words" words
-    # (past_words: int)
-    # and replace each PoS tag by its respective id
-    x = []
-    y = []
-    with open(data_file_path, "r") as tagged_sentences:
-        for sentence in tagged_sentences:
-            pairs = sentence.strip().split(" ")
-            words, pos_tags = zip(*(pair.split("/") for pair in pairs if len(pair.split("/")) == 2))
-            words = [clean_string(word) for word in words]
-            for j in range(len(words)):
-                y.append(pos_toId[ pos_tags[j] ])
-                pastWords_ids = []
-                for k in range(0, past_words+1): # for previous words
-                    if j-k < 0: # out of bounds
-                        pastWords_ids.append(0) # <UNK>
-                    elif words[j-k] in word_toId: # word in vocabulary
-                        pastWords_ids.append(word_toId[ words[j-k] ])
-                    else: # word not in vocabulary
-                        pastWords_ids.append(0) # <UNK>    
-                x.append(pastWords_ids)
 
-    return [np.array(x), np.array(y), len(unique_posTags)]
+    with open(data_file_path, "r") as tagged_sentences:
+        x, y = words_tags_to_ids(tagged_sentences, word_toId,
+                pos_toId, past_words)
+    return x, y, len(unique_posTags)
 
 
 def load_data_and_labels_test(data_file_path, past_words):
@@ -87,28 +94,10 @@ def load_data_and_labels_test(data_file_path, past_words):
         word_toId = pickle.load(f)
     with open(cwd+"/vocab/posIds.pkl", "rb") as f:
         pos_toId = pickle.load(f)
-    # Replace each word with the id of the previous "past_words" words
-    # and replace each PoS tag by its respective id
-    x = []
-    y = []
     with open(cwd+data_file_path, "r") as tagged_sentences:
-        for sentence in tagged_sentences:
-            pairs = sentence.strip().split(" ")
-            words, pos_tags = zip(*(pair.split("/") for pair in pairs if len(pair.split("/")) == 2))
-            words = [clean_string(word) for word in words]
-            for j in range(len(words)): # for each word in the sentence
-                y.append(pos_toId[ pos_tags[j] ])
-                pastWords_ids = []
-                for k in range(1, past_words+1): # for previous words
-                    if j-k < 0: # out of bounds
-                        pastWords_ids.append(0) # <UNK>
-                    elif words[j-k] in word_toId: # word in vocabulary
-                        pastWords_ids.append(word_toId[ words[j-k] ])
-                    else: # word not in vocabulary
-                        pastWords_ids.append(0) # <UNK>    
-                x.append(pastWords_ids)
-
-    return [np.array(x), np.array(y)]
+        x, y = words_tags_to_ids(tagged_sentences, word_toId, pos_toId,
+                past_words)
+    return x, y
 
 
 def batch_iter(data, batch_size, num_epochs, shuffle=True):
