@@ -95,11 +95,9 @@ def load_data_and_labels_test(data_file_path, past_words):
         for sentence in tagged_sentences:
             pairs = sentence.strip().split(" ")
             words, pos_tags = zip(*(pair.split("/") for pair in pairs if len(pair.split("/")) == 2))
+            words = [clean_string(word) for word in words]
             for j in range(len(words)): # for each word in the sentence
-                if pos_tags[j] in pos_toId: 
-                    y.append(pos_toId[ pos_tags[j] ])
-                else:
-                    y.append(0) # TODO: This is not correct, but we should have seen all posible output tags in advance...
+                y.append(pos_toId[ pos_tags[j] ])
                 pastWords_ids = []
                 for k in range(1, past_words+1): # for previous words
                     if j-k < 0: # out of bounds
