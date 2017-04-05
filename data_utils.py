@@ -18,11 +18,8 @@ class TextLoader():
         self.n_past_words = 3
 
 
-    def parse(self, sentence):
+    def parse(self, words):
         x = []
-
-        words = sentence.strip().split(" ")
-        words = [clean_string(word) for word in words]
 
         for j in range(len(words)):
             pastWords_ids = []

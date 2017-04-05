@@ -10,8 +10,8 @@ import pickle
 
 from data_utils import TextLoader
 
-words = "I like fish because I am a cat"
-words = "David Ivor St Hubbins is a fictional character"
+sentence = "I like fish because I am a cat"
+words = sentence.split(" ")
 textloader = TextLoader()
 features = textloader.parse(words)
 
@@ -36,4 +36,11 @@ with graph.as_default():
 
         predicted_pos_ids = sess.run(predictions, {input_x: features})
         predicted_pos = textloader.pos_ids_to_pos(predicted_pos_ids)
-        print(predicted_pos)
+
+        word_pos_tuples = zip(words, predicted_pos)
+        annotated_words = []
+        for tup in word_pos_tuples:
+            annotated_word = '%s/%s' % (tup[0], tup[1])
+            annotated_words.append(annotated_word)
+        annotated_sentence = ' '.join(annotated_words)
+        print(annotated_sentence)
