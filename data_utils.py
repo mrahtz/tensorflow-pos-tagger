@@ -6,6 +6,49 @@ import pickle
 def clean_string(string):
     return string.lower()
 
+class TextLoader():
+
+    def __init__(self):
+        with open("vocab/wordIds.pkl", "rb") as f:
+            self.word_toId = pickle.load(f)
+        with open("vocab/posIds.pkl", "rb") as f:
+            self.pos_toId = pickle.load(f)
+        self.id_to_word_dict = {v: k for k, v in self.word_toId.items()}
+        self.id_to_pos_dict = {v: k for k, v in self.pos_toId.items()}
+        self.n_past_words = 3
+
+
+    def parse(self, sentence):
+        x = []
+
+        words = sentence.strip().split(" ")
+        words = [clean_string(word) for word in words]
+
+        for j in range(len(words)):
+            pastWords_ids = []
+            for k in range(0, self.n_past_words+1):
+                if j-k < 0: # out of bounds
+                    pastWords_ids.append(0) # <UNK>
+                elif words[j-k] in self.word_toId: # word in vocabulary
+                    pastWords_ids.append(self.word_toId[ words[j-k] ])
+                else: # word not in vocabulary
+                    pastWords_ids.append(0) # <UNK>    
+            x.append(pastWords_ids)
+        return x
+
+    def word_ids_to_words(self, word_ids):
+        words = []
+        for word_id in word_ids:
+            words.append(self.id_to_word_dict[word_id])
+        return words
+
+    def pos_ids_to_pos(self, pos_ids):
+        pos = []
+        for pos_id in pos_ids:
+            pos.append(self.id_to_pos_dict[pos_id])
+        return pos
+
+
 def words_tags_to_ids(data_file, word_toId, pos_toId, n_past_words):
     # Replace each word with the IDs of the previous "past_words" words
     # (past_words: int)
