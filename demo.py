@@ -25,7 +25,7 @@ with graph.as_default():
 
     with sess.as_default():
         # Load the saved meta graph and restore variables
-        checkpoint_file = tf.train.latest_checkpoint('runs/1491410780/checkpoints/')
+        checkpoint_file = tf.train.latest_checkpoint('runs/1491411201/checkpoints/')
         saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
         saver.restore(sess, checkpoint_file)
 
