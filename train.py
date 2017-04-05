@@ -38,26 +38,19 @@ print("")
 
 ## DATA PREPARATION ##
 
-print("Loading and preprocessing traning and dev datasets \n")
-if os.path.isfile('cache.pkl'):
-    with open('cache.pkl', 'rb') as f:
-        x, y, num_outputTags = pickle.load(f)
-else:
-    # Load data
-    x, y, num_outputTags = data_utils.load_data_and_labels(FLAGS.data_file_path, FLAGS.vocab_size, FLAGS.past_words)
-    with open('cache.pkl', 'wb') as f:
-        pickle.dump((x, y, num_outputTags), f)
+with open(FLAGS.data_file_path, 'r') as f:
+    tagged_sentences = f.read()
+textloader = data_utils.TextLoader(tagged_sentences, '/tmp/vocab.pkl', FLAGS.vocab_size, FLAGS.past_words)
 
-# Randomly shuffle data
-np.random.seed(10)
-shuffled_indices = np.random.permutation(len(y))
-x_shuffled = x[shuffled_indices]
-y_shuffled = y[shuffled_indices]
+x = textloader.features
+y = textloader.labels
+num_outputTags = len(textloader.pos_to_id)
+
 
 # Split train/dev sets
 dev_sample_index = -1 * int(FLAGS.dev_sample_percentage * float(len(y)))
-x_train, x_dev = x_shuffled[:dev_sample_index], x_shuffled[dev_sample_index:]
-y_train, y_dev = y_shuffled[:dev_sample_index], y_shuffled[dev_sample_index:]
+x_train, x_dev = x[:dev_sample_index], x[dev_sample_index:]
+y_train, y_dev = y[:dev_sample_index], y[dev_sample_index:]
 
 # Generate training batches
 batches = data_utils.batch_iter(list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)

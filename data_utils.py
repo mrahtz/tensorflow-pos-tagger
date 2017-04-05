@@ -3,141 +3,116 @@ import os
 from collections import Counter
 import pickle
 
-def clean_string(string):
-    return string.lower()
+UNKNOWN_WORD_ID = 0
+UNKNOWN_WORD_SYMBOL = "<UNKNOWN WORD>"
 
 class TextLoader():
 
-    def __init__(self):
-        with open("vocab/wordIds.pkl", "rb") as f:
-            self.word_toId = pickle.load(f)
-        with open("vocab/posIds.pkl", "rb") as f:
-            self.pos_toId = pickle.load(f)
-        self.id_to_word_dict = {v: k for k, v in self.word_toId.items()}
-        self.id_to_pos_dict = {v: k for k, v in self.pos_toId.items()}
-        self.n_past_words = 3
+    def __init__(self, tagged_sentences, vocab_path, vocab_size, n_past_words):
+        self.vocab_size = vocab_size
+        self.n_past_words = n_past_words
+
+        if os.path.exists(vocab_path):
+            print("Loading saved vocabulary...")
+            self.load_vocab(vocab_path)
+        else:
+            print("Generating vocabulary...")
+            self.gen_vocab(tagged_sentences)
+            self.save_vocab(vocab_path)
+
+        self.features, self.labels = \
+            self.get_features_and_labels(tagged_sentences)
 
 
-    def parse(self, words):
+    def gen_vocab(self, tagged_sentences):
+        words, pos_tags = self.split_sentence(tagged_sentences)
+
+        word_counts = Counter(words)
+        unique_pos_tags = set(pos_tags)
+
+        # most_common() returns (word, count) tuples
+        words_to_keep = [t[0] for t in word_counts.most_common(self.vocab_size)]
+
+        self.word_to_id = \
+            {word: i for i, word in enumerate(words_to_keep, start=1)}
+        # add unknown token to vocabulary
+        # (all words not contained in it will be mapped to this)
+        self.word_to_id[UNKNOWN_WORD_SYMBOL] = UNKNOWN_WORD_ID
+
+        self.pos_to_id = \
+            {pos: i for i, pos in enumerate(list(unique_pos_tags))}
+
+        self.id_to_word = {v: k for k, v in self.word_to_id.items()}
+        self.id_to_pos = {v: k for k, v in self.pos_to_id.items()}
+
+        self.words = words
+
+
+    def save_vocab(self, vocab_filename):
+        dicts = [self.word_to_id,
+                self.pos_to_id,
+                self.id_to_word,
+                self.id_to_pos]
+        with open(vocab_filename, 'wb') as f:
+            pickle.dump(dicts, f)
+
+
+    def load_vocab(self, vocab_path):
+        with open(vocab_path, 'rb') as f:
+            dicts = pickle.load(f)
+        self.word_to_id = dicts[0]
+        self.pos_to_id = dicts[1]
+        self.id_to_word = dicts[2]
+        self.id_to_pos = dicts[3]
+
+
+    def get_features_and_labels(self, tagged_sentences):
         x = []
+        y = []
 
-        for j in range(len(words)):
-            pastWords_ids = []
-            for k in range(0, self.n_past_words+1):
-                if j-k < 0: # out of bounds
-                    pastWords_ids.append(0) # <UNK>
-                elif words[j-k] in self.word_toId: # word in vocabulary
-                    pastWords_ids.append(self.word_toId[ words[j-k] ])
-                else: # word not in vocabulary
-                    pastWords_ids.append(0) # <UNK>    
-            x.append(pastWords_ids)
-        return x
+        for sentence in tagged_sentences.split('\n'):
+            words, pos_tags = self.split_sentence(sentence)
 
-    def word_ids_to_words(self, word_ids):
-        words = []
-        for word_id in word_ids:
-            words.append(self.id_to_word_dict[word_id])
-        return words
+            for j in range(len(words)):
+                if len(pos_tags) != 0:
+                    tag = pos_tags[j]
+                    y.append(self.pos_to_id[tag])
+
+                past_word_ids = []
+                for k in range(0, self.n_past_words+1):
+                    if j-k < 0: # out of bounds
+                        past_word_ids.append(UNKNOWN_WORD_ID)
+                    elif words[j-k] in self.word_to_id:
+                        past_word_ids.append(self.word_to_id[words[j-k]])
+                    else: # word not in vocabulary
+                        past_word_ids.append(UNKNOWN_WORD_ID)
+                x.append(past_word_ids)
+
+        return x, y
+
+
+    def split_sentence(self, tagged_sentence):
+        tagged_words = tagged_sentence.split()
+        word_tag_tuples = [x.split("/") for x in tagged_words]
+
+        words = [t[0] for t in word_tag_tuples]
+        # If we have an unannotated sentence, we'll only have the words,
+        # so the length of the tuple will be just 1
+        pos_tags = [t[1] for t in word_tag_tuples if len(t) == 2]
+
+        # len(pos_tags) == 0: unannotated sentence
+        # But if we have an annotated sentence, we should have the same
+        # number of words and tags
+        if len(pos_tags) != 0 and len(pos_tags) != len(words):
+            raise ValueError("Number of words doesn't match number of tags")
+
+        return words, pos_tags
 
     def pos_ids_to_pos(self, pos_ids):
         pos = []
         for pos_id in pos_ids:
             pos.append(self.id_to_pos_dict[pos_id])
         return pos
-
-
-def words_tags_to_ids(data_file, word_toId, pos_toId, n_past_words):
-    # Replace each word with the IDs of the previous "past_words" words
-    # (past_words: int)
-    # and replace each PoS tag by its respective id
-    x = []
-    y = []
-    for sentence in data_file:
-        pairs = sentence.strip().split(" ")
-        words, pos_tags = zip(*(pair.split("/") for pair in pairs if len(pair.split("/")) == 2))
-        words = [clean_string(word) for word in words]
-        for j in range(len(words)):
-            y.append(pos_toId[ pos_tags[j] ])
-            pastWords_ids = []
-            for k in range(0, n_past_words+1): # for previous words
-                if j-k < 0: # out of bounds
-                    pastWords_ids.append(0) # <UNK>
-                elif words[j-k] in word_toId: # word in vocabulary
-                    pastWords_ids.append(word_toId[ words[j-k] ])
-                else: # word not in vocabulary
-                    pastWords_ids.append(0) # <UNK>    
-            x.append(pastWords_ids)
-
-    return np.array(x), np.array(y) 
-
-
-def load_data_and_labels(data_file_path, max_vocabSize, past_words):
-    """
-    Loads training data, creates vocabulary and returns the respective ids for words and tags
-    
-    Returns:
-    - x: a list of lists - one list for each word
-         each list contains the ID of the word in the vocabulary,
-         along with the IDs of the previous words
-    - y: the POS tag for each of the words
-    """
-    # Load data from file
-    cwd = os.getcwd()
-    # Collect word counts and unique PoS tags
-    word_counts = Counter()
-    unique_posTags = set()
-    with open(data_file_path, "r") as tagged_sentences:
-        for sentence in tagged_sentences:
-            for tag in sentence.strip().split(" "):
-                splitted_tag = tag.split("/")
-                if len(splitted_tag) != 2:
-                    continue
-                word = clean_string(splitted_tag[0])
-                pos = splitted_tag[1]
-                unique_posTags.add(pos) # collect all unique PoS tags
-                if word in word_counts: # collect word frequencies (used later to prune vocabulary)
-                    word_counts[word] += 1
-                else:
-                    word_counts[word] = 1
-    # Prune vocabulary to max_vocabSize
-    words_toKeep = [tupl[0] for tupl in word_counts.most_common(max_vocabSize-1)]
-    # Create mapping from words/PoS tags to ids
-    # (IDs start from 1)
-    word_toId = {word: i for i, word in enumerate(words_toKeep, 1)}
-    # ID 0: UNK
-    word_toId["<UNK>"] = 0 # add unknown token to vocabulary (all words not contained in it will be mapped to this)
-    pos_toId = {pos: i for i, pos in enumerate(list(unique_posTags))}
-    # Save vocabulary and PoS tags ids for evaluation
-    if not os.path.exists(cwd+"/vocab"):
-        os.makedirs(cwd+"/vocab")
-    with open(cwd+"/vocab/wordIds.pkl", "wb") as f:
-        pickle.dump(word_toId, f)
-    with open(cwd+"/vocab/posIds.pkl", "wb") as f:
-        pickle.dump(pos_toId, f)
-
-    with open(data_file_path, "r") as tagged_sentences:
-        x, y = words_tags_to_ids(tagged_sentences, word_toId,
-                pos_toId, past_words)
-    return x, y, len(unique_posTags)
-
-
-def load_data_and_labels_test(data_file_path, past_words):
-    """
-    Loads test data and vocabulary and returns the respective ids for words and tags
-    """
-    cwd = os.getcwd()
-
-    # Load vocabulary and PoS tags ids from training
-    if not os.path.exists(cwd+"/vocab"):
-        raise FileNotFoundError("You need to run train.py first in order to generate the vocabulary.")
-    with open(cwd+"/vocab/wordIds.pkl", "rb") as f:
-        word_toId = pickle.load(f)
-    with open(cwd+"/vocab/posIds.pkl", "rb") as f:
-        pos_toId = pickle.load(f)
-    with open(cwd+data_file_path, "r") as tagged_sentences:
-        x, y = words_tags_to_ids(tagged_sentences, word_toId, pos_toId,
-                past_words)
-    return x, y
 
 
 def batch_iter(data, batch_size, num_epochs, shuffle=True):
