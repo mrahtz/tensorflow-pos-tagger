@@ -4,7 +4,10 @@ from collections import Counter
 import pickle
 
 UNKNOWN_WORD_ID = 0
-UNKNOWN_WORD_SYMBOL = "<UNKNOWN WORD>"
+UNKNOWN_WORD = "<UNKNOWN_WORD>"
+
+UNKNOWN_POS_ID = 0
+UNKNOWN_POS = "<UNKNOWN_POS>"
 
 class TextLoader():
 
@@ -35,12 +38,12 @@ class TextLoader():
 
         self.word_to_id = \
             {word: i for i, word in enumerate(words_to_keep, start=1)}
-        # add unknown token to vocabulary
-        # (all words not contained in it will be mapped to this)
-        self.word_to_id[UNKNOWN_WORD_SYMBOL] = UNKNOWN_WORD_ID
+        # all words not contained in the vocabulary will be mapped to this word
+        self.word_to_id[UNKNOWN_WORD] = UNKNOWN_WORD_ID # = 0
 
         self.pos_to_id = \
-            {pos: i for i, pos in enumerate(list(unique_pos_tags))}
+            {pos: i for i, pos in enumerate(list(unique_pos_tags), start=1)}
+        self.pos_to_id[UNKNOWN_POS] = UNKNOWN_POS_ID # = 0
 
         self.id_to_word = {v: k for k, v in self.word_to_id.items()}
         self.id_to_pos = {v: k for k, v in self.pos_to_id.items()}
@@ -95,18 +98,20 @@ class TextLoader():
         tagged_words = tagged_sentence.split()
         word_tag_tuples = [x.split("/") for x in tagged_words]
 
-        words = [t[0] for t in word_tag_tuples]
-        # If we have an unannotated sentence, we'll only have the words,
-        # so the length of the tuple will be just 1
-        pos_tags = [t[1] for t in word_tag_tuples if len(t) == 2]
+        words = []
+        pos_tags = []
+        for word_tag_tuple in word_tag_tuples:
+            word = word_tag_tuple[0]
+            words.append(word)
 
-        # len(pos_tags) == 0: unannotated sentence
-        # But if we have an annotated sentence, we should have the same
-        # number of words and tags
-        if len(pos_tags) != 0 and len(pos_tags) != len(words):
-            raise ValueError("Number of words doesn't match number of tags")
+            if len(word_tag_tuple) == 1:
+                pos_tags.append(UNKNOWN_POS)
+            else:
+                tag = word_tag_tuple[1]
+                pos_tags.append(tag)
 
         return words, pos_tags
+
 
     def pos_ids_to_pos(self, pos_ids):
         pos = []
