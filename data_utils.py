@@ -6,8 +6,8 @@ import pickle
 UNKNOWN_WORD_ID = 0
 UNKNOWN_WORD = "<UNKNOWN_WORD>"
 
-UNKNOWN_POS_ID = 0
-UNKNOWN_POS = "<UNKNOWN_POS>"
+UNTAGGED_POS_ID = 0
+UNTAGGED_POS = "<UNTAGGED_POS>"
 
 class TextLoader():
 
@@ -23,27 +23,32 @@ class TextLoader():
             self.gen_vocab(tagged_sentences)
             self.save_vocab(vocab_path)
 
+        print("Generating tensors...")
         self.features, self.labels = \
             self.get_features_and_labels(tagged_sentences)
 
 
     def gen_vocab(self, tagged_sentences):
-        words, pos_tags = self.split_sentence(tagged_sentences)
+        words, pos_tags = \
+            self.split_sentence(tagged_sentences, drop_untagged=True)
 
         word_counts = Counter(words)
         unique_pos_tags = set(pos_tags)
 
         # most_common() returns (word, count) tuples
-        words_to_keep = [t[0] for t in word_counts.most_common(self.vocab_size)]
+        # Why the '- 1'? To account for the extra word we add for words
+        # not in the vocabulary, UNKNOWN_WORD.
+        words_to_keep = \
+            [t[0] for t in word_counts.most_common(self.vocab_size - 1)]
 
         self.word_to_id = \
             {word: i for i, word in enumerate(words_to_keep, start=1)}
-        # all words not contained in the vocabulary will be mapped to this word
+        # words not in the vocabulary will be mapped to this word
         self.word_to_id[UNKNOWN_WORD] = UNKNOWN_WORD_ID # = 0
 
         self.pos_to_id = \
             {pos: i for i, pos in enumerate(list(unique_pos_tags), start=1)}
-        self.pos_to_id[UNKNOWN_POS] = UNKNOWN_POS_ID # = 0
+        self.pos_to_id[UNTAGGED_POS] = UNTAGGED_POS_ID # = 0
 
         self.id_to_word = {v: k for k, v in self.word_to_id.items()}
         self.id_to_pos = {v: k for k, v in self.pos_to_id.items()}
@@ -74,7 +79,10 @@ class TextLoader():
         y = []
 
         for sentence in tagged_sentences.split('\n'):
-            words, pos_tags = self.split_sentence(sentence)
+            # Why drop_untagged=False here?
+            # Because we might have received an untagged sentence
+            # which we now want to tag.
+            words, pos_tags = self.split_sentence(sentence, drop_untagged=False)
 
             for j in range(len(words)):
                 if len(pos_tags) != 0:
@@ -94,30 +102,30 @@ class TextLoader():
         return x, y
 
 
-    def split_sentence(self, tagged_sentence):
+    def split_sentence(self, tagged_sentence, drop_untagged):
         tagged_words = tagged_sentence.split()
         word_tag_tuples = [x.split("/") for x in tagged_words]
 
         words = []
         pos_tags = []
         for word_tag_tuple in word_tag_tuples:
+            if len(word_tag_tuple) > 2:
+                # We've got something like AC/DC/NNP
+                continue
+
+            if drop_untagged and len(word_tag_tuple) == 1:
+                continue
+
             word = word_tag_tuple[0]
             words.append(word)
 
             if len(word_tag_tuple) == 1:
-                pos_tags.append(UNKNOWN_POS)
+                pos_tags.append(UNTAGGED_POS)
             else:
                 tag = word_tag_tuple[1]
                 pos_tags.append(tag)
 
         return words, pos_tags
-
-
-    def pos_ids_to_pos(self, pos_ids):
-        pos = []
-        for pos_id in pos_ids:
-            pos.append(self.id_to_pos_dict[pos_id])
-        return pos
 
 
 def batch_iter(data, batch_size, num_epochs, shuffle=True):

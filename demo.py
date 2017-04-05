@@ -14,7 +14,7 @@ textloader = data_utils.TextLoader(sentence, vocab_path='/tmp/vocab.pkl', vocab_
 
 sess = tf.Session()
 
-checkpoint_file = tf.train.latest_checkpoint('runs/1491419967/checkpoints/')
+checkpoint_file = tf.train.latest_checkpoint('runs/1491424895/checkpoints/')
 saver = tf.train.import_meta_graph(checkpoint_file + '.meta')
 saver.restore(sess, checkpoint_file)
 
