@@ -15,10 +15,9 @@ words = sentence.strip().split(" ")
 textloader = TextLoader()
 features = textloader.parse(words)
 
-session_conf = tf.ConfigProto(allow_soft_placement=True)
-sess = tf.Session(config=session_conf)
+sess = tf.Session()
 
-checkpoint_file = tf.train.latest_checkpoint('runs/1491411201/checkpoints/')
+checkpoint_file = tf.train.latest_checkpoint('runs/1491414625/checkpoints/')
 saver = tf.train.import_meta_graph(checkpoint_file + '.meta')
 saver.restore(sess, checkpoint_file)
 

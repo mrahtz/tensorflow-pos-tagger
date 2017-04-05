@@ -65,15 +65,7 @@ print("Done \n")
 ## MODEL AND TRAINING PROCEDURE DEFINITION ##
 
 with tf.Graph().as_default():
-    session_conf = tf.ConfigProto(
-        # allow_soft_placement: allow TensorFlow to deploy itself on whatever it
-        # thinks is sensible, if the requested device isn't available
-        # (pos_tagger.py requests GPU)
-        allow_soft_placement=FLAGS.allow_soft_placement,
-        # log_device_placement: make a note in the log of which device
-        # TensorFlow depoloyed itself on (which CPU/GPU)
-        log_device_placement=FLAGS.log_device_placement)
-    sess = tf.Session(config=session_conf)
+    sess = tf.Session()
     with sess.as_default():
         # num_outputTags: the number of unique POS tags seen in the
         # training data

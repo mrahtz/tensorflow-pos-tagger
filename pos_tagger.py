@@ -17,85 +17,83 @@ class PoSTagger(object):
         # The target pos-tags
         self.input_y = tf.placeholder(tf.int64, [None], name="input_y") 
 
-        with tf.device('/gpu:0'):
-            
-            # Embedding layer
-            with tf.name_scope("embedding"):
-                # Create an embedding matrix
-                # Initialise following recommendations from
-                # https://www.tensorflow.org/get_started/mnist/pros
-                self.embedding_matrix = tf.Variable(
-                    tf.truncated_normal(
-                        [vocab_size, embedding_size],
-                        stddev=0.1
-                    )
+        # Embedding layer
+        with tf.name_scope("embedding"):
+            # Create an embedding matrix
+            # Initialise following recommendations from
+            # https://www.tensorflow.org/get_started/mnist/pros
+            self.embedding_matrix = tf.Variable(
+                tf.truncated_normal(
+                    [vocab_size, embedding_size],
+                    stddev=0.1
                 )
- 
-            # Fully connected layer with ReLU 
-            with tf.name_scope("model"):
+            )
 
-                # Create feature vector
+        # Fully connected layer with ReLU 
+        with tf.name_scope("model"):
 
-                self.word_matrix = \
-                    tf.nn.embedding_lookup(self.embedding_matrix, self.input_x)
-                # stack the rows
-                # -1: account for variable batch size
-                # TODO: understand
-                new_shape = [-1, (n_past_words + 1) * embedding_size]
-                self.feature_vector = tf.reshape(self.word_matrix, new_shape)
+            # Create feature vector
 
-                # send feature vector through hidden layers
+            self.word_matrix = \
+                tf.nn.embedding_lookup(self.embedding_matrix, self.input_x)
+            # stack the rows
+            # -1: account for variable batch size
+            # TODO: understand
+            new_shape = [-1, (n_past_words + 1) * embedding_size]
+            self.feature_vector = tf.reshape(self.word_matrix, new_shape)
 
-                feature_vector_size = (n_past_words + 1) * embedding_size
-                h1_size = 100
-                w1 = tf.Variable(
-                    tf.truncated_normal(
-                        [feature_vector_size, h1_size],
-                        stddev=0.1
-                    )
+            # send feature vector through hidden layers
+
+            feature_vector_size = (n_past_words + 1) * embedding_size
+            h1_size = 100
+            w1 = tf.Variable(
+                tf.truncated_normal(
+                    [feature_vector_size, h1_size],
+                    stddev=0.1
                 )
-                self.h1 = tf.nn.relu(
-                    tf.matmul(self.feature_vector, w1)
+            )
+            self.h1 = tf.nn.relu(
+                tf.matmul(self.feature_vector, w1)
+            )
+
+            """
+            h2_size = 100
+            self.w2 = tf.Variable(
+                tf.truncated_normal(
+                    [h1_size, h2_size],
+                    stddev=0.1
                 )
+            )
+            self.h2 = tf.nn.relu(
+                tf.matmul(self.h1, self.w2)
+            )
+            """
 
-                """
-                h2_size = 100
-                self.w2 = tf.Variable(
-                    tf.truncated_normal(
-                        [h1_size, h2_size],
-                        stddev=0.1
-                    )
+            # Compute softmax logits 
+
+            self.wl = tf.Variable(
+                tf.truncated_normal(
+                    [h1_size, n_pos_tags],
+                    stddev=0.1
                 )
-                self.h2 = tf.nn.relu(
-                    tf.matmul(self.h1, self.w2)
+            )
+            self.logits = tf.matmul(self.h1, self.wl)
+
+            # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
+
+            self.loss = tf.reduce_mean(
+                tf.nn.sparse_softmax_cross_entropy_with_logits(
+                    labels=self.input_y,
+                    logits=self.logits
                 )
-                """
+            )
 
-                # Compute softmax logits 
+        # Calculate accuracy
+        with tf.name_scope("accuracy"):
+            # compute the average accuracy over the batch (remember tf.argmax and tf.equal)
 
-                self.wl = tf.Variable(
-                    tf.truncated_normal(
-                        [h1_size, n_pos_tags],
-                        stddev=0.1
-                    )
-                )
-                self.logits = tf.matmul(self.h1, self.wl)
-    
-                # Compute the mean loss using tf.nn.sparse_softmax_cross_entropy_with_logits
-
-                self.loss = tf.reduce_mean(
-                    tf.nn.sparse_softmax_cross_entropy_with_logits(
-                        labels=self.input_y,
-                        logits=self.logits
-                    )
-                )
-
-            # Calculate accuracy
-            with tf.name_scope("accuracy"):
-                # compute the average accuracy over the batch (remember tf.argmax and tf.equal)
-
-                # logits has shape [?, 42]
-                self.predictions = tf.argmax(self.logits, axis=1, name='predictions')
-                correct_prediction = tf.equal(self.predictions, self.input_y)
-                self.accuracy = tf.reduce_mean(tf.cast(correct_prediction,
-                    tf.float32))
+            # logits has shape [?, 42]
+            self.predictions = tf.argmax(self.logits, axis=1, name='predictions')
+            correct_prediction = tf.equal(self.predictions, self.input_y)
+            self.accuracy = tf.reduce_mean(tf.cast(correct_prediction,
+                tf.float32))
