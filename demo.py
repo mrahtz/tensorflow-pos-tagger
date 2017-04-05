@@ -10,8 +10,8 @@ import pickle
 
 from data_utils import TextLoader
 
-sentence = "I like fish because I am a cat"
-words = sentence.split(" ")
+sentence = input('Enter a sentence to be annotated: ')
+words = sentence.strip().split(" ")
 textloader = TextLoader()
 features = textloader.parse(words)
 
@@ -43,4 +43,5 @@ with graph.as_default():
             annotated_word = '%s/%s' % (tup[0], tup[1])
             annotated_words.append(annotated_word)
         annotated_sentence = ' '.join(annotated_words)
+        print("Your sentence, annotated:")
         print(annotated_sentence)
