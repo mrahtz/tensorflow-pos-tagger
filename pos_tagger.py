@@ -95,7 +95,7 @@ class PoSTagger(object):
                 # compute the average accuracy over the batch (remember tf.argmax and tf.equal)
 
                 # logits has shape [?, 42]
-                self.predictions = tf.argmax(self.logits, axis=1)
+                self.predictions = tf.argmax(self.logits, axis=1, name='predictions')
                 correct_prediction = tf.equal(self.predictions, self.input_y)
                 self.accuracy = tf.reduce_mean(tf.cast(correct_prediction,
                     tf.float32))
