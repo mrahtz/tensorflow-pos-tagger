@@ -9,19 +9,20 @@ import time
 import datetime
 import pickle
 
-vocab_file = '/tmp/vocab.pkl'
+vocab_file = 'vocab/vocab.pkl'
 
 if not os.path.exists(vocab_file):
     print("Error: vocabulary file '%s' doesn't exist." % vocab_file)
     print("Train the model first using train.py.")
     sys.exit(1)
 
-sentence = input('Enter a sentence to be annotated: ')
-textloader = data_utils.TextLoader(sentence, vocab_path='/tmp/vocab.pkl', vocab_size=50000, n_past_words=3)
+sentence = input('Enter a sentence to be annotated:\n')
+print()
+textloader = data_utils.TextLoader(sentence, vocab_path=vocab_file, vocab_size=50000, n_past_words=3)
 
 sess = tf.Session()
 
-checkpoint_file = tf.train.latest_checkpoint('runs/1491424895/checkpoints/')
+checkpoint_file = tf.train.latest_checkpoint('checkpoints/')
 saver = tf.train.import_meta_graph(checkpoint_file + '.meta')
 saver.restore(sess, checkpoint_file)
 

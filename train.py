@@ -40,8 +40,8 @@ print("")
 
 with open(FLAGS.data_file_path, 'r') as f:
     tagged_sentences = f.read()
-textloader = data_utils.TextLoader(tagged_sentences, '/tmp/vocab.pkl',
-        FLAGS.vocab_size, FLAGS.past_words, tensor_path='/tmp/tensors.pkl')
+textloader = data_utils.TextLoader(tagged_sentences, 'vocab/vocab.pkl',
+        FLAGS.vocab_size, FLAGS.past_words, tensor_path='vocab/tensors.pkl')
 
 x = textloader.features
 y = textloader.labels
@@ -81,10 +81,8 @@ with tf.Graph().as_default():
         # Define an optimizer step
         train_op = optimizer.minimize(pos_tagger.loss, global_step=global_step)
 
-        # Output directory for models and summaries
-        timestamp = str(int(time.time()))
-        out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
-        print("Writing to {}\n".format(out_dir))
+        log_dir = 'logs/'
+        checkpoint_dir = 'checkpoints/'
 
         # Summaries for loss and accuracy
         loss_summary = tf.summary.scalar("loss", pos_tagger.loss)
@@ -92,16 +90,14 @@ with tf.Graph().as_default():
 
         # Train Summaries
         train_summary_op = tf.summary.merge([loss_summary, acc_summary])
-        train_summary_dir = os.path.join(out_dir, "summaries", "train")
+        train_summary_dir = os.path.join(log_dir, "summaries", "train")
         train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
 
         # Dev summaries
         dev_summary_op = tf.summary.merge([loss_summary, acc_summary])
-        dev_summary_dir = os.path.join(out_dir, "summaries", "dev")
+        dev_summary_dir = os.path.join(log_dir, "summaries", "dev")
         dev_summary_writer = tf.summary.FileWriter(dev_summary_dir, sess.graph)
 
-        # Checkpoint directory (Tensorflow assumes this directory already exists so we need to create it)
-        checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
         checkpoint_prefix = os.path.join(checkpoint_dir, "model")
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
