@@ -1,4 +1,4 @@
-# TensorFlow Part of Speech Tagger
+# TensorFlow Part-of-Speech Tagger
 
 Simple part-of-speech tagger implemented using a feedforward network in
 Tensorflow.
