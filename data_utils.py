@@ -11,7 +11,7 @@ UNTAGGED_POS = "<UNTAGGED_POS>"
 
 class TextLoader():
 
-    def __init__(self, tagged_sentences, vocab_path, vocab_size, n_past_words):
+    def __init__(self, sentences, vocab_path, vocab_size, n_past_words):
         self.vocab_size = vocab_size
         self.n_past_words = n_past_words
 
@@ -25,7 +25,7 @@ class TextLoader():
 
         print("Generating tensors...")
         self.features, self.labels = \
-            self.get_features_and_labels(tagged_sentences)
+            self.get_features_and_labels(sentences)
 
 
     def gen_vocab(self, tagged_sentences):
