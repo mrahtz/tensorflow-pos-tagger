@@ -22,7 +22,7 @@ class TextLoader():
             # vocab_size and n_past_words
         else:
             print("Generating vocabulary...")
-            self.gen_vocab(tagged_sentences)
+            self.gen_vocab(sentences)
             self.save_vocab(vocab_path)
 
         print("Generating tensors...")
