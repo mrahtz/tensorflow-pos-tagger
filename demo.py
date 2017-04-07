@@ -4,10 +4,17 @@ from pos_tagger import PoSTagger
 import tensorflow as tf
 import numpy as np
 import os
+import sys
 import time
 import datetime
 import pickle
 
+vocab_file = '/tmp/vocab.pkl'
+
+if not os.path.exists(vocab_file):
+    print("Error: vocabulary file '%s' doesn't exist." % vocab_file)
+    print("Train the model first using train.py.")
+    sys.exit(1)
 
 sentence = input('Enter a sentence to be annotated: ')
 textloader = data_utils.TextLoader(sentence, vocab_path='/tmp/vocab.pkl', vocab_size=50000, n_past_words=3)
