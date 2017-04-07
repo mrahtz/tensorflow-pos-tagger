@@ -40,7 +40,8 @@ print("")
 
 with open(FLAGS.data_file_path, 'r') as f:
     tagged_sentences = f.read()
-textloader = data_utils.TextLoader(tagged_sentences, '/tmp/vocab.pkl', FLAGS.vocab_size, FLAGS.past_words)
+textloader = data_utils.TextLoader(tagged_sentences, '/tmp/vocab.pkl',
+        FLAGS.vocab_size, FLAGS.past_words, tensor_path='/tmp/tensors.pkl')
 
 x = textloader.features
 y = textloader.labels

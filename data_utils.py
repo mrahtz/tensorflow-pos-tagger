@@ -11,7 +11,8 @@ UNTAGGED_POS = "<UNTAGGED_POS>"
 
 class TextLoader():
 
-    def __init__(self, sentences, vocab_path, vocab_size, n_past_words):
+    def __init__(self, sentences, vocab_path, vocab_size, n_past_words,
+            tensor_path=None):
         self.vocab_size = vocab_size
         self.n_past_words = n_past_words
 
@@ -25,9 +26,14 @@ class TextLoader():
             self.gen_vocab(sentences)
             self.save_vocab(vocab_path)
 
-        print("Generating tensors...")
-        self.features, self.labels = \
-            self.get_features_and_labels(sentences)
+        if tensor_path is not None and os.path.exists(tensor_path):
+            print("Loading saved tensors...")
+            self.load_tensors(tensor_path)
+        else:
+            print("Generating tensors...")
+            self.gen_features_and_labels(sentences)
+            if tensor_path is not None:
+                self.save_tensors(tensor_path)
 
 
     def gen_vocab(self, tagged_sentences):
@@ -76,7 +82,20 @@ class TextLoader():
         self.id_to_pos = dicts[3]
 
 
-    def get_features_and_labels(self, tagged_sentences):
+    def save_tensors(self, tensors_path):
+        tensors = [self.features, self.labels]
+        with open(tensors_path, 'wb') as f:
+            pickle.dump(tensors, f)
+
+
+    def load_tensors(self, tensors_path):
+        with open(tensors_path, 'rb') as f:
+            tensors = pickle.load(f)
+        self.features = tensors[0]
+        self.labels = tensors[1]
+
+
+    def gen_features_and_labels(self, tagged_sentences):
         x = []
         y = []
 
@@ -101,7 +120,8 @@ class TextLoader():
                         past_word_ids.append(UNKNOWN_WORD_ID)
                 x.append(past_word_ids)
 
-        return x, y
+        self.features = x
+        self.labels = y
 
 
     def split_sentence(self, tagged_sentence, drop_untagged):
