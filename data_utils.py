@@ -18,6 +18,8 @@ class TextLoader():
         if os.path.exists(vocab_path):
             print("Loading saved vocabulary...")
             self.load_vocab(vocab_path)
+            # TODO: check that the loaded vocabulary matches
+            # vocab_size and n_past_words
         else:
             print("Generating vocabulary...")
             self.gen_vocab(tagged_sentences)
