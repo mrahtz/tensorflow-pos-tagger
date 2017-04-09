@@ -46,10 +46,9 @@ y = textloader.labels
 num_outputTags = len(textloader.pos_to_id)
 
 
-# Split train/dev sets
-dev_sample_index = -1 * int(FLAGS.dev_sample_percentage * float(len(y)))
-x_train, x_dev = x[:dev_sample_index], x[dev_sample_index:]
-y_train, y_dev = y[:dev_sample_index], y[dev_sample_index:]
+idx = int(FLAGS.dev_sample_percentage * len(x))
+x_test, x_train = x[:idx], x[idx:]
+y_test, y_train = y[:idx], y[idx:]
 
 # Generate training batches
 batches = data_utils.batch_iter(list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
@@ -78,22 +77,26 @@ optimizer = tf.train.AdamOptimizer()
 # Define an optimizer step
 train_op = optimizer.minimize(pos_tagger.loss, global_step=global_step)
 
-log_dir = 'logs/'
+timestamp = int(time.time())
+log_dir = 'logs/%d/' % timestamp
+os.makedirs(log_dir)
+
 checkpoint_dir = 'checkpoints/'
 
-# Summaries for loss and accuracy
-loss_summary = tf.summary.scalar("loss", pos_tagger.loss)
-acc_summary = tf.summary.scalar("accuracy", pos_tagger.accuracy)
+# Add ops to record summaries for loss and accuracy...
+train_loss = tf.summary.scalar("train_loss", pos_tagger.loss)
+train_accuracy = tf.summary.scalar("train_accuracy", pos_tagger.accuracy)
+# ...then merge these ops into one single op so that they easily be run together
+train_summary_ops = tf.summary.merge([train_loss, train_accuracy])
+# Same ops, but with different names, so that train/test results show up
+# separately in TensorBoard
+test_loss = tf.summary.scalar("test_loss", pos_tagger.loss)
+test_accuracy = tf.summary.scalar("test_accuracy", pos_tagger.accuracy)
+test_summary_ops = tf.summary.merge([test_loss, test_accuracy])
 
-# Train Summaries
-train_summary_op = tf.summary.merge([loss_summary, acc_summary])
-train_summary_dir = os.path.join(log_dir, "summaries", "train")
-train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
-
-# Dev summaries
-dev_summary_op = tf.summary.merge([loss_summary, acc_summary])
-dev_summary_dir = os.path.join(log_dir, "summaries", "dev")
-dev_summary_writer = tf.summary.FileWriter(dev_summary_dir, sess.graph)
+# (this step also writes the graph to the events file so that
+# it shows up in TensorBoard)
+summary_writer = tf.summary.FileWriter(log_dir, sess.graph)
 
 checkpoint_prefix = os.path.join(checkpoint_dir, "model")
 if not os.path.exists(checkpoint_dir):
@@ -104,49 +107,35 @@ saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
 sess.run(tf.global_variables_initializer())
 sess.graph.finalize()
 
-# Define training and dev steps (batch) 
-def train_step(x_batch, y_batch):
-    """
-    A single training step
-    """
+def step(x, y, train):
     feed_dict = {
-        pos_tagger.input_x: x_batch,
-        pos_tagger.input_y: y_batch
+        pos_tagger.input_x: x,
+        pos_tagger.input_y: y
     }
-    _, step, summaries, loss, accuracy = sess.run(
-        [train_op, global_step, train_summary_op, pos_tagger.loss, pos_tagger.accuracy],
-        feed_dict)
-    time_str = datetime.datetime.now().isoformat()
-    print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-    train_summary_writer.add_summary(summaries, step)
+    ops = [global_step, pos_tagger.loss, pos_tagger.accuracy]
 
+    if train:
+        _, summaries, step, loss, accuracy = sess.run(
+            [train_op, train_summary_ops] + ops, feed_dict
+        )
+    else:
+        summaries, step, loss, accuracy = sess.run(
+            [test_summary_ops] + ops, feed_dict
+        )
 
+    print("Step %d: loss %.1f, accuracy %d%%" % (step, loss, 100 * accuracy))
+    summary_writer.add_summary(summaries, step)
 
-def dev_step(x_batch, y_batch, writer=None):
-    """
-    Evaluates model on a dev set
-    """
-    feed_dict = {
-        pos_tagger.input_x: x_batch,
-        pos_tagger.input_y: y_batch
-    }
-    step, summaries, loss, accuracy = sess.run(
-        [global_step, dev_summary_op, pos_tagger.loss, pos_tagger.accuracy],
-        feed_dict)
-    time_str = datetime.datetime.now().isoformat()
-    print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-    if writer:
-        writer.add_summary(summaries, step)
-
-## TRAINING LOOP ##
 for batch in batches:
     x_batch, y_batch = zip(*batch)
-    train_step(x_batch, y_batch)
+    step(x_batch, y_batch, train=True)
     current_step = tf.train.global_step(sess, global_step)
+
     if current_step % FLAGS.evaluate_every == 0:
         print("\nEvaluation:")
-        dev_step(x_dev, y_dev, writer=dev_summary_writer)
+        step(x_test, y_test, train=False)
         print("")
+
     if current_step % FLAGS.checkpoint_every == 0:
         path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-        print("Saved model checkpoint to {}\n".format(path))
+        print("Saved model checkpoint to '%s'" % path)
