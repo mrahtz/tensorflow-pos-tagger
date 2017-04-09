@@ -11,7 +11,7 @@ UNTAGGED_POS = "<UNTAGGED_POS>"
 
 class TextLoader():
 
-    def __init__(self, sentences, vocab_path, vocab_size, n_past_words,
+    def __init__(self, sentences, vocab_size, n_past_words, vocab_path,
             tensor_path=None):
         self.vocab_size = vocab_size
         self.n_past_words = n_past_words

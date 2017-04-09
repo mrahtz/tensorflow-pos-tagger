@@ -17,7 +17,9 @@ if not os.path.exists(vocab_file):
 
 sentence = input('Enter a sentence to be annotated:\n')
 print()
-textloader = data_utils.TextLoader(sentence, vocab_path=vocab_file, vocab_size=50000, n_past_words=3)
+textloader = data_utils.TextLoader(
+    sentence, vocab_size=50000, n_past_words=3, vocab_path=vocab_file
+)
 
 sess = tf.Session()
 
