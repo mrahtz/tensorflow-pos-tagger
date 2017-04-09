@@ -1,14 +1,14 @@
 import tensorflow as tf
 #import numpy as np
 
-class PoSTagger(object):
+class Tagger(object):
     """
     A simple PoS tagger implementation in Tensorflow.
     Uses an embedding layer followed by a fully connected layer with ReLU and a softmax layer.
     """
     def __init__(self, n_pos_tags, vocab_size, embedding_size, n_past_words): # sequence_length, filter_sizes, num_filters, l2_reg_lambda=0.0
 
-        print("Initialising PoSTagger...")
+        print("Initialising Tagger...")
         print("n_pos_tags: ", n_pos_tags)
 
         # Minibatch placeholders for input and output

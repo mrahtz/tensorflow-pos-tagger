@@ -1,5 +1,5 @@
 import data_utils
-from pos_tagger import PoSTagger
+import model
 
 import tensorflow as tf
 import numpy as np
@@ -65,7 +65,7 @@ with tf.Graph().as_default():
         # training data
 
         # Initialize model
-        pos_tagger = PoSTagger(
+        pos_tagger = model.Tagger(
             n_pos_tags=num_outputTags, 
             vocab_size=FLAGS.vocab_size, 
             embedding_size=FLAGS.embedding_dim, 

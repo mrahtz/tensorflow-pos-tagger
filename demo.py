@@ -1,5 +1,4 @@
 import data_utils
-from pos_tagger import PoSTagger
 
 import tensorflow as tf
 import numpy as np
