@@ -27,7 +27,7 @@ class Tagger(object):
 
             # one hidden layer
 
-            feature_vector_size = self.feature_vector.get_shape()[1]
+            feature_vector_size = int(self.feature_vector.shape[1])
             h_size = 100
             w1 = tf.Variable(
                 tf.truncated_normal([feature_vector_size, h_size], stddev=0.1))
