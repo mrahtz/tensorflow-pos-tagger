@@ -8,17 +8,18 @@ import time
 import datetime
 import pickle
 
-vocab_file = 'vocab/vocab.pkl'
+CACHE_DIR = 'cache'
+vocab_path = os.path.join(CACHE_DIR, 'vocab.pkl')
 
-if not os.path.exists(vocab_file):
-    print("Error: vocabulary file '%s' doesn't exist." % vocab_file)
+if not os.path.exists(vocab_path):
+    print("Error: vocabulary file '%s' doesn't exist." % vocab_path)
     print("Train the model first using train.py.")
     sys.exit(1)
 
 sentence = input('Enter a sentence to be annotated:\n')
 print()
 textloader = data_utils.TextLoader(
-    sentence, vocab_size=50000, n_past_words=3, vocab_path=vocab_file
+    sentence, vocab_size=50000, n_past_words=3, vocab_path=vocab_path
 )
 
 sess = tf.Session()

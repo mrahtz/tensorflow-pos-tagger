@@ -9,6 +9,7 @@ import model
 
 CHECKPOINT_DIR = 'checkpoints'
 LOGS_DIR = 'logs'
+CACHE_DIR = 'cache'
 # Evaluate model on training set every this number of steps
 EVALUATE_EVERY = 100
 # Save a checkpoint every this number of steps
@@ -26,7 +27,7 @@ def parse_args():
     parser.add_argument(
         "--data_path",
         type=str,
-        default="data/corpus.supersmall",
+        default="data/corpus.small",
         help="Path to the training data")
     parser.add_argument(
         "--embedding_dim",
@@ -56,12 +57,16 @@ def load_data(data_path, vocab_size, n_past_words, test_proportion, batch_size,
               n_epochs):
     with open(data_path, 'r') as f:
         tagged_sentences = f.read()
+
+    vocab_path = os.path.join(CACHE_DIR, 'vocab.pkl')
+    tensor_path = os.path.join(CACHE_DIR, 'tensors.pkl')
+
     textloader = data_utils.TextLoader(
         tagged_sentences,
         vocab_size,
         n_past_words,
-        vocab_path='vocab/vocab.pkl',
-        tensor_path='vocab/tensors.pkl')
+        vocab_path,
+        tensor_path)
 
     x = textloader.features
     y = textloader.labels
