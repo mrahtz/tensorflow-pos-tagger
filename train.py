@@ -1,14 +1,11 @@
-import data_utils
-import model
-
-import tensorflow as tf
-import numpy as np
 import os
 import time
-import datetime
-import pickle
-import numpy as np
 import argparse
+
+import tensorflow as tf
+
+import data_utils
+import model
 
 CHECKPOINT_DIR = 'checkpoints'
 LOGS_DIR = 'logs'
