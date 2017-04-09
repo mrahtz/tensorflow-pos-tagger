@@ -8,38 +8,36 @@ import time
 import datetime
 import pickle
 import numpy as np
+import argparse
 
 CHECKPOINT_DIR = 'checkpoints'
 LOGS_DIR = 'logs'
+# Evaluate model on training set every this number of steps
+EVALUATE_EVERY = 100
+# Save a checkpoint every this number of steps
+CHECKPOINT_EVERY = 100
 
-# Data loading parameters
-tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data used for validation (default: 10%)")
+def parse_args():
+    parser = argparse.ArgumentParser()
 
-tf.flags.DEFINE_string("data_file_path", "data/corpus.supersmall", "Path to the training data")
-# Model parameters
-tf.flags.DEFINE_integer("embedding_dim", 50, "Dimensionality of word embeddings (default: 128)")
-tf.flags.DEFINE_integer("vocab_size", 50000, "Size of the vocabulary (default: 50k)")
-tf.flags.DEFINE_integer("n_past_words", 3, "How many previous words are used for prediction (default: 3)")
-# Training parameters
-tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
-tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
-tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
-# Tensorflow Parameters
-tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
-tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-
-FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
+    parser.add_argument("--test_proportion", type=float, default=0.1, help="Proportion of the training data to reserve for validation")
+    parser.add_argument("--data_path", type=str, default="data/corpus.supersmall", help="Path to the training data")
+    parser.add_argument("--embedding_dim", type=int, default=50, help="Dimensionality of word embeddings")
+    parser.add_argument("--vocab_size", type=int, default=50000, help="Number of words to remember in vocabulary")
+    parser.add_argument("--n_past_words", type=int, default=3, help="Number of previous words to use for prediction")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+    parser.add_argument("--n_epochs", type=int, default=200, help="Number of training epochs")
 
 
-def load_data():
-    with open(FLAGS.data_file_path, 'r') as f:
+    args = parser.parse_args()
+    return args
+
+
+def load_data(data_path, vocab_size, n_past_words, test_proportion, batch_size, n_epochs):
+    with open(data_path, 'r') as f:
         tagged_sentences = f.read()
     textloader = data_utils.TextLoader(
-        tagged_sentences,
-        FLAGS.vocab_size, FLAGS.n_past_words,
+        tagged_sentences, vocab_size, n_past_words,
         vocab_path='vocab/vocab.pkl', tensor_path='vocab/tensors.pkl'
     )
 
@@ -47,11 +45,11 @@ def load_data():
     y = textloader.labels
     n_pos_tags = len(textloader.pos_to_id)
 
-    idx = int(FLAGS.dev_sample_percentage * len(x))
+    idx = int(test_proportion * len(x))
     x_test, x_train = x[:idx], x[idx:]
     y_test, y_train = y[:idx], y[idx:]
 
-    train_batches = data_utils.batch_iter(list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
+    train_batches = data_utils.batch_iter(list(zip(x_train, y_train)), batch_size, n_epochs)
     test_data = {'x': x_test, 'y': y_test}
 
     return (train_batches, test_data, n_pos_tags)
@@ -98,7 +96,7 @@ def logging_init(model, graph):
 
 
 def checkpointing_init():
-    saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
+    saver = tf.train.Saver(tf.global_variables(), max_to_keep=5)
     return saver
 
 
@@ -126,14 +124,16 @@ def step(sess, model,
 
 
 def main():
+    args = parse_args()
+
     sess = tf.Session()
 
-    train_batches, test_data, n_pos_tags = load_data()
+    train_batches, test_data, n_pos_tags = load_data(args.data_path, args.vocab_size, args.n_past_words, args.test_proportion, args.batch_size, args.n_epochs)
     x_test = test_data['x']
     y_test = test_data['y']
     pos_tagger, train_op, global_step = model_init(
-            FLAGS.vocab_size, FLAGS.embedding_dim,
-            FLAGS.n_past_words, n_pos_tags
+        args.vocab_size, args.embedding_dim,
+        args.n_past_words, n_pos_tags
     )
     train_summary_ops, test_summary_ops, summary_writer = logging_init(
         pos_tagger, sess.graph
@@ -158,7 +158,7 @@ def main():
         )
         current_step = tf.train.global_step(sess, global_step)
 
-        if current_step % FLAGS.evaluate_every == 0:
+        if current_step % EVALUATE_EVERY == 0:
             print("\nEvaluation:")
             step(
                 sess,
@@ -169,7 +169,7 @@ def main():
             )
             print("")
 
-        if current_step % FLAGS.checkpoint_every == 0:
+        if current_step % CHECKPOINT_EVERY == 0:
             prefix = os.path.join(CHECKPOINT_DIR, 'model')
             path = saver.save(sess, prefix, global_step=current_step)
             print("Saved model checkpoint to '%s'" % path)
