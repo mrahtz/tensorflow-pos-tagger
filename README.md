@@ -13,7 +13,7 @@ is based on a skeleton provided with the homework by Florian Schmidt.
 First, train the model using `train.py`:
 
 ```
-$ python train.py
+$ python3 train.py
 ```
 
 Once you're happy with how well trained the model is, run `demo.py`, input a
