@@ -22,7 +22,7 @@ sentence, and see the model annotate it with
 part-of-speech tags:
 
 ```
-$ python demo.py
+$ python3 demo.py
 Enter a sentence to be annotated:
 The Carterfone is a device invented by Thomas Carter
 
